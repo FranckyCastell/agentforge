@@ -25,6 +25,18 @@ duckduckgo-search:
   command: npx
   args: ["-y", "duckduckgo-mcp"]
 
+# duckduckgo-search:
+#   type: local
+#   command: npx
+#   args: ["-y", "duckduckgo-mcp"]
+
+# brave-search:
+#   type: local
+#   command: npx
+#   args: ["-y", "@anthropic/mcp-server-brave-search"]
+#   env:
+#     BRAVE_API_KEY: "${BRAVE_API_KEY}"
+
 # ─── Examples (uncomment and configure as needed) ────────────────────
 
 # artificial-analysis:
