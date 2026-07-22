@@ -1,4 +1,4 @@
 name: duckduckgo-search
 type: local
-command: npx
-args: ["-y", "duckduckgo-mcp"]
+command: python3
+args: ["agents/news_agent/mcps/websearch_server.py"]
