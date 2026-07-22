@@ -86,23 +86,26 @@ function hashStr(s: string): number {
 }
 
 function agentColor(name: string): string {
-  const presets: Record<string, string> = { orquestador: th.role.orq }
+  const presets: Record<string, string> = { orchestrator: th.role.orq }
   if (presets[name]) return presets[name]
   return agentPalette[hashStr(name) % agentPalette.length]
 }
 
 function agentGlyph(name: string): string {
-  return name === "orquestador" ? "\u25CF" : "\u25C6"
+  return name === "orchestrator" ? "\u25CF" : "\u25C6"
 }
 
 const INTERNAL_TOOLS = new Set(["transfer_to_agent", "transfer_agent"])
 
 // ─── Event types ─────────────────────────────────────────────────────
 
+interface SkillInfo {
+  id: string; name: string; description: string; tags: string[]; examples: string[]
+}
 interface AgentInfo {
-  name: string; nombre: string; model: string; provider: string
+  name: string; display_name: string; model: string; provider: string
   is_orchestrator: boolean
-  skills: Array<{ id: string; nombre: string; descripcion: string; tags: string[]; ejemplos: string[] }>
+  skills: SkillInfo[]
   tools: string[]
 }
 interface InitEvent { type: "init"; agents: AgentInfo[] }
@@ -159,7 +162,7 @@ export class A2ATuiApp {
   // State
   agents: AgentInfo[] = []
   streaming = false
-  currentAgent = "orquestador"
+  currentAgent = "orchestrator"
   hasDelegated = false
   lineBuf = ""
   hasStarted = false
@@ -338,7 +341,7 @@ export class A2ATuiApp {
   // ── Event stream ──────────────────────────────────────────────────
 
   boot(projectDir: string): void {
-    this.proc = spawn("python3", ["orquestador.py", "--json-events"], {
+    this.proc = spawn("python3", ["orchestrator.py", "--json-events"], {
       cwd: projectDir, stdio: ["pipe", "pipe", "pipe"],
     })
     const stdout = this.proc.stdout
@@ -423,9 +426,9 @@ export class A2ATuiApp {
   // ── Response handling ────────────────────────────────────────────
 
   private handleResponse(agent: string, text: string): void {
-    if (agent === "orquestador" && !this.hasDelegated) {
+    if (agent === "orchestrator" && !this.hasDelegated) {
       this.addPendingReply(text)
-    } else if (agent !== "orquestador" && this.hasDelegated) {
+    } else if (agent !== "orchestrator" && this.hasDelegated) {
       this.addSubAgentText(agent, text)
     } else {
       this.addFinalResponse(text)
@@ -481,7 +484,7 @@ export class A2ATuiApp {
     })
     const hm = this.nowHM()
     this.assistantBox.add(new TextRenderable(this.renderer, {
-      content: t`${fg(th.role.orq)("\u25CF orquestador")} ${fg(th.fg.muted)("\u00B7 " + hm)}`,
+      content: t`${fg(th.role.orq)("\u25CF orchestrator")} ${fg(th.fg.muted)("\u00B7 " + hm)}`,
     }))
     this.assistantBody = new BoxRenderable(this.renderer, { flexDirection: "column", paddingTop: 1 })
     this.assistantBox.add(this.assistantBody)
@@ -659,7 +662,7 @@ export class A2ATuiApp {
     this.ensureCard()
 
     // If sub-agent has text but no tools yet, convert text to thinking
-    if (agent !== "orquestador" && !this.subAgentHasTools && this.replyMd) {
+    if (agent !== "orchestrator" && !this.subAgentHasTools && this.replyMd) {
       this.convertSubAgentTextToThinking()
     }
 
@@ -748,7 +751,7 @@ export class A2ATuiApp {
       ;(kids[0] as TextRenderable).content =
         t`${fg(RGBA.fromHex(color))(glyph + " " + name)} ${fg(th.fg.muted)("\u00B7 " + hm)}`
     }
-    if (name !== "orquestador") {
+    if (name !== "orchestrator") {
       this.assistantBox.borderColor = RGBA.fromHex(color)
       this.assistantBox.backgroundColor = th.bg.tintReply
     }
@@ -760,7 +763,7 @@ export class A2ATuiApp {
     this.ensureCard()
     this.stopSpinner()
     this.assistantHasReply = true
-    this.updateCardAgent("orquestador")
+    this.updateCardAgent("orchestrator")
 
     if (!this.replyMd) {
       this.replyMd = new MarkdownRenderable(this.renderer, {
@@ -815,7 +818,7 @@ export class A2ATuiApp {
     this.delegateMarker = null
     this.pendingReplyText = ""
     this.hasDelegated = false
-    this.currentAgent = "orquestador"
+    this.currentAgent = "orchestrator"
   }
 
   finishTurn(): void {
@@ -836,7 +839,7 @@ export class A2ATuiApp {
     this.pendingReplyText = ""
     this.hasDelegated = false
     this.streaming = false
-    this.currentAgent = "orquestador"
+    this.currentAgent = "orchestrator"
     this.setMode("chat", th.fg.accent)
     this.updateStatus()
   }
@@ -947,11 +950,11 @@ export class A2ATuiApp {
         const lines: string[] = ["Connected Agents"]
         for (const a of this.agents) {
           const role = a.is_orchestrator ? "orchestrator" : "sub-agent"
-          lines.push(`${agentGlyph(a.name)} ${a.nombre} (${role})`)
+          lines.push(`${agentGlyph(a.name)} ${a.display_name} (${role})`)
           lines.push(`    model: ${a.model}  \u00B7  provider: ${a.provider}`)
           if (a.skills?.length) {
             lines.push("    skills:")
-            for (const s of a.skills) lines.push(`      - ${s.id}: ${s.descripcion.trim()}`)
+            for (const s of a.skills) lines.push(`      - ${s.id}: ${s.description.trim()}`)
           }
           if (a.tools?.length) lines.push(`    tools: ${a.tools.join(", ")}`)
           lines.push("")

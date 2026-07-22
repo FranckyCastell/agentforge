@@ -21,7 +21,7 @@
 It ships with three example agents (weather, news, legal) and supports **11 LLM providers** with per-agent configuration, **real MCP tools** (Open-Meteo, DuckDuckGo — zero API keys required), a **terminal UI** with delegation visualization, and automatic retry on upstream failures.
 
 > [!NOTE]
-> The orchestrator's system prompt is **dynamically generated** at startup by scanning `agentes/`. Each agent's skills (with tags and example queries) and MCP tools are injected into the prompt so the LLM knows exactly when and where to delegate. No hardcoded routing.
+> The orchestrator's system prompt is **dynamically generated** at startup by scanning `agents/`. Each agent's skills (with tags and example queries) and MCP tools are injected into the prompt so the LLM knows exactly when and where to delegate. No hardcoded routing.
 
 ---
 
@@ -35,7 +35,7 @@ flowchart TD
   end
 
   subgraph Forge["AgentForge"]
-    ORQ["Orchestrator<br/>Google ADK InMemoryRunner<br/>Dynamic prompt from agentes/"]
+    ORQ["Orchestrator<br/>Google ADK InMemoryRunner<br/>Dynamic prompt from agents/"]
     
     subgraph Agents["Discovered Agents"]
       W["Weather Agent<br/>nemotron-3-ultra-free<br/>MCP: Open-Meteo"]
@@ -84,10 +84,10 @@ you · 15:38
 
 ## Adding an Agent
 
-Create a directory under `agentes/` with three files:
+Create a directory under `agents/` with three files:
 
 ```
-agentes/my_agent/
+agents/my_agent/
 ├── config.yaml
 ├── prompt.yaml
 └── skills/
@@ -96,7 +96,7 @@ agentes/my_agent/
 
 **config.yaml** — model, provider, and MCP bindings:
 ```yaml
-nombre: "My Agent"
+name: "My Agent"
 provider:
   name: openrouter
   model: "deepseek/deepseek-v4-flash"
@@ -118,12 +118,12 @@ system_prompt: |
 **skills/myskill.yaml** — declarative skill definitions for the dynamic orchestrator prompt:
 ```yaml
 id: recipe_search
-nombre: Recipe Search
-descripcion: Search recipes by ingredients, cuisine, or occasion
+name: Recipe Search
+description: Search recipes by ingredients, cuisine, or occasion
 tags:
   - recipes
   - cooking
-ejemplos:
+examples:
   - "Give me a recipe with chicken and rice"
   - "What can I cook with avocado and quinoa"
 ```
@@ -224,20 +224,20 @@ The TUI (TypeScript + OpenTUI, `bun`) provides a visual interface for the orches
 ├── .env.example               # All provider API key templates
 ├── requirements.txt           # Python dependencies
 │
-├── agentes/
-│   ├── orquestador/           # Root orchestrator (routing agent)
+├── agents/
+│   ├── orchestrator/           # Root orchestrator (routing agent)
 │   │   ├── config.yaml
 │   │   ├── prompt.yaml
 │   │   └── skills/router.yaml
-│   ├── agente_tiempo/         # Weather (MCP: Open-Meteo)
+│   ├── weather_agent/         # Weather (MCP: Open-Meteo)
 │   │   ├── config.yaml
 │   │   ├── prompt.yaml
 │   │   └── skills/weather.yaml
-│   ├── agente_noticias/       # News (MCP: DuckDuckGo)
+│   ├── news_agent/       # News (MCP: DuckDuckGo)
 │   │   ├── config.yaml
 │   │   ├── prompt.yaml
 │   │   └── skills/news.yaml
-│   └── agente_abogado/        # Legal (LLM knowledge, no MCP)
+│   └── lawyer_agent/        # Legal (LLM knowledge, no MCP)
 │       ├── config.yaml
 │       ├── prompt.yaml
 │       └── skills/legal.yaml

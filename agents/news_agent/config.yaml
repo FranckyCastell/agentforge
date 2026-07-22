@@ -1,4 +1,4 @@
-nombre: "Weather Agent"
+name: "News Agent"
 
 provider:
   name: openrouter
@@ -6,4 +6,4 @@ provider:
   api_key_env: "OPENROUTER_API_KEY"
 
 mcps:
-  - weather-mcp
+  - duckduckgo-search

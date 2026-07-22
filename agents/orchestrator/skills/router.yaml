@@ -1,6 +1,6 @@
 id: orchestration
-nombre: Query Router
-descripcion: >
+name: Query Router
+description: >
   Evaluates the user's intent and routes the query to the appropriate
   specialized agent. Answers general knowledge, definitions, and topics
   not covered by specialized agents directly.
@@ -10,7 +10,7 @@ tags:
   - delegation
   - general-knowledge
   - triage
-ejemplos:
+examples:
   - '"What is the weather?" -> delegate to weather agent'
   - '"Latest news on AI" -> delegate to news agent'
   - '"Tell me a joke" -> answer directly (general knowledge)'

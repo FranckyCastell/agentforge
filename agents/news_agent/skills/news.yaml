@@ -1,6 +1,6 @@
 id: news_search
-nombre: News Search
-descripcion: >
+name: News Search
+description: >
   Searches for current news and articles on a specific topic. Allows filtering
   by recency (last 24h, week, month) and retrieves recent headlines from
   multiple sources.
@@ -10,15 +10,15 @@ tags:
   - headlines
   - articles
   - current-events
-ejemplos:
+examples:
   - "Latest news about artificial intelligence"
   - "What's happening in Ukraine"
   - "Economy and finance news today"
   - "Find articles about climate change"
 ---
 id: breaking_news
-nombre: Breaking News
-descripcion: >
+name: Breaking News
+description: >
   Gets the latest breaking news and current headlines. Covers recent events
   in politics, technology, economy, society, and international affairs.
 tags:
@@ -27,15 +27,15 @@ tags:
   - latest
   - trending
   - headlines
-ejemplos:
+examples:
   - "What are the most important news today"
   - "Give me the latest headlines"
   - "What's happening right now in the world"
   - "Breaking news in technology"
 ---
 id: web_search
-nombre: Web Search
-descripcion: >
+name: Web Search
+description: >
   Performs general web searches to get up-to-date information on any topic.
   Useful for queries requiring recent data or fact-checking beyond the
   model's internal knowledge.
@@ -45,7 +45,7 @@ tags:
   - research
   - fact-checking
   - general
-ejemplos:
+examples:
   - "Who won the elections in France"
   - "What's the current price of Bitcoin"
   - "Find info about the latest SpaceX launch"

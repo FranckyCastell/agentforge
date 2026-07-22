@@ -35,7 +35,7 @@ PROVIDER_CONFIGS = {
 }
 
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
-logger = logging.getLogger("orquestador_adk")
+logger = logging.getLogger("orchestrator_adk")
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -125,12 +125,12 @@ def _build_mcp_toolset(mcp_def: dict) -> object | None:
     if mcp_type == "remote":
         url = mcp_def.get("url", "")
         if not url:
-            logger.warning("MCP remoto sin url: %s", mcp_def)
+            logger.warning("Remote MCP without url: %s", mcp_def)
             return None
         try:
             return McpToolset(url=url)
         except Exception as e:
-            logger.warning("Error cargando MCP remoto %s: %s", url, e)
+            logger.warning("Error loading remote MCP %s: %s", url, e)
             return None
 
     command = mcp_def.get("command", "")
@@ -155,11 +155,11 @@ def _build_mcp_toolset(mcp_def: dict) -> object | None:
         params = StdioServerParameters(command=command, args=args, env=env)
         return McpToolset(connection_params=params)
     except Exception as e:
-        logger.warning("Error cargando MCP local %s: %s", command, e)
+        logger.warning("Error loading local MCP %s: %s", command, e)
         return None
 
 
-def _cargar_tools_mcp(abs_dir: str, config: dict) -> tuple[list, list[str]]:
+def _load_mcp_tools(abs_dir: str, config: dict) -> tuple[list, list[str]]:
     tools = []
     tool_names = []
 
@@ -175,9 +175,9 @@ def _cargar_tools_mcp(abs_dir: str, config: dict) -> tuple[list, list[str]]:
                 if toolset:
                     tools.append(toolset)
                     tool_names.append(ref)
-                    logger.info("  └─ MCP '%s' cargado desde registry central", ref)
+                    logger.info("  └─ MCP '%s' loaded from central registry", ref)
             else:
-                logger.warning("  └─ MCP '%s' no encontrado en mcp_servers.yaml", ref)
+                logger.warning("  └─ MCP '%s' not found in mcp_servers.yaml", ref)
 
     mcps_dir = os.path.join(abs_dir, "mcps")
     if os.path.isdir(mcps_dir):
@@ -192,12 +192,12 @@ def _cargar_tools_mcp(abs_dir: str, config: dict) -> tuple[list, list[str]]:
                 if toolset:
                     tools.append(toolset)
                     tool_names.append(name)
-                    logger.info("  └─ MCP '%s' cargado desde mcps/%s", name, fname)
+                    logger.info("  └─ MCP '%s' loaded from mcps/%s", name, fname)
 
     return tools, tool_names
 
 
-def _cargar_skills(abs_dir: str, config: dict) -> list[dict]:
+def _load_skills(abs_dir: str, config: dict) -> list[dict]:
     skills_info = []
 
     skills_dir = os.path.join(abs_dir, "skills")
@@ -233,14 +233,14 @@ def _format_skills_compact(skills: list[dict]) -> str:
     parts = []
     for s in skills:
         sid = s.get("id", "")
-        desc = s.get("descripcion", "").strip()
+        desc = s.get("description", "").strip()
         tags = s.get("tags", [])
-        ejemplos = s.get("ejemplos", [])[:2]
+        examples = s.get("examples", [])[:2]
         line = f"  - {sid}: {desc}"
         if tags:
             line += f" [tags: {', '.join(tags)}]"
-        if ejemplos:
-            line += f" [ej: {' / '.join(ejemplos)}]"
+        if examples:
+            line += f" [ej: {' / '.join(examples)}]"
         parts.append(line)
     return "\n".join(parts)
 
@@ -252,13 +252,13 @@ def _generate_orchestrator_prompt(base_prompt: str, sub_agents: list[Agent], age
     agent_sections = []
     for agent, meta in zip(sub_agents, agent_metas):
         name = agent.name
-        desc = meta.get("nombre", name)
+        desc = meta.get("name", name)
         skills_text = _format_skills_compact(meta.get("skills", []))
 
         section = f"### {name}\n"
-        section += f"Descripcion: {desc}\n"
+        section += f"Description: {desc}\n"
         if meta.get("tools"):
-            section += f"Herramientas: {', '.join(meta['tools'])}\n"
+            section += f"Tools: {', '.join(meta['tools'])}\n"
         if skills_text:
             section += f"Skills:\n{skills_text}\n"
         agent_sections.append(section)
@@ -267,34 +267,34 @@ def _generate_orchestrator_prompt(base_prompt: str, sub_agents: list[Agent], age
 
     dynamic_prompt = f"""{base_prompt}
 
-## Agentes especializados
+## Specialized Agents
 
 {agents_block}
 
-## Reglas de delegacion
+## Delegation Rules
 
-IMPORTANTE: Analiza la consulta del usuario y decide a que agente delegar segun sus skills y tags.
+IMPORTANT: Analyze the user's query and decide which agent to delegate to based on their skills and tags.
 
-- Solo puedes delegar a un agente por consulta
-- Si la consulta encaja con un agente, delega a ESE agente (no a otro)
-- Si la consulta es cultura general, definiciones, explicaciones o creatividad, responde tu directamente
-- Si la consulta podria responderla cualquiera, prioriza responder tu para evitar latencia
+- You can only delegate to one agent per query
+- If the query matches an agent, delegate to THAT agent (not another)
+- If the query is general knowledge, definitions, explanations, or creativity, respond directly
+- If anyone could answer the query, prioritize responding yourself to avoid latency
 
-## Memoria
+## Memory
 
-Tienes memoria de conversacion. El usuario puede dar respuestas cortas que completan consultas anteriores. Usa el contexto para interpretar respuestas ambiguas.
+You have conversation memory. The user may give short answers that complete previous queries. Use context to interpret ambiguous responses.
 
-## Directrices
+## Guidelines
 
-- Se util y directo en tus respuestas
-- No preguntes al usuario que quiere hacer si el contexto lo deja claro
-- Cuando delegues, no repitas la respuesta del subagente
+- Be useful and direct in your responses
+- Don't ask what the user wants to do if context makes it clear
+- When delegating, don't repeat the sub-agent's response
 """
 
     return dynamic_prompt
 
 
-def cargar_agente_desde_dir(agent_dir: str) -> tuple[Agent, dict]:
+def load_agent_from_dir(agent_dir: str) -> tuple[Agent, dict]:
     abs_dir = os.path.join(os.path.dirname(__file__), agent_dir)
     env_file = os.path.join(abs_dir, ".env")
     if os.path.exists(env_file):
@@ -304,36 +304,36 @@ def cargar_agente_desde_dir(agent_dir: str) -> tuple[Agent, dict]:
     prompt_path = os.path.join(abs_dir, "prompt.yaml")
 
     if not os.path.exists(cfg_path):
-        raise FileNotFoundError(f"No existe config.yaml en {abs_dir}")
+        raise FileNotFoundError(f"config.yaml not found in {abs_dir}")
 
     config = _load_yaml(cfg_path)
     prompt_cfg = _load_yaml(prompt_path) if os.path.exists(prompt_path) else {}
     system_prompt = prompt_cfg.get("system_prompt", "")
 
-    skills_info = _cargar_skills(abs_dir, config)
+    skills_info = _load_skills(abs_dir, config)
 
     desc_skills = ""
     if skills_info:
         skills_parts = []
         for s in skills_info:
             sid = s.get("id", "")
-            desc = s.get("descripcion", "")
+            desc = s.get("description", "")
             tags = ", ".join(s.get("tags", []))
-            ejemplos = ", ".join(s.get("ejemplos", [])[:2])
+            examples = ", ".join(s.get("examples", [])[:2])
             skills_parts.append(
                 f"[{sid}] {desc}"
                 + (f" (Tags: {tags})" if tags else "")
-                + (f" (Ejemplos: {ejemplos})" if ejemplos else "")
+                + (f" (Examples: {examples})" if examples else "")
             )
         desc_skills = " Skills: " + "; ".join(skills_parts)
 
-    tools, tool_names = _cargar_tools_mcp(abs_dir, config)
+    tools, tool_names = _load_mcp_tools(abs_dir, config)
     model_adk = _format_model_for_adk(config.get("provider", {}))
-    agent_name = config.get("nombre", agent_dir).replace(" ", "_").lower()
+    agent_name = config.get("name", agent_dir).replace(" ", "_").lower()
 
     agent = Agent(
         name=agent_name,
-        description=f"{config.get('nombre')} - {desc_skills}",
+        description=f"{config.get('name')} - {desc_skills}",
         instruction=system_prompt,
         model=model_adk,
         tools=tools,
@@ -341,7 +341,7 @@ def cargar_agente_desde_dir(agent_dir: str) -> tuple[Agent, dict]:
     )
 
     meta = {
-        "nombre": config.get("nombre", agent_name),
+        "display_name": config.get("name", agent_name),
         "model": config.get("provider", {}).get("model", "?"),
         "provider": config.get("provider", {}).get("name", "?"),
         "skills": skills_info,
@@ -351,63 +351,63 @@ def cargar_agente_desde_dir(agent_dir: str) -> tuple[Agent, dict]:
     return agent, meta
 
 
-def _descubrir_agentes(base_dir: str) -> list[dict]:
-    agentes = []
-    agentes_dir = os.path.join(base_dir, "agentes")
-    if not os.path.isdir(agentes_dir):
-        return agentes
-    for entry in sorted(os.listdir(agentes_dir)):
-        full = os.path.join(agentes_dir, entry)
+def _discover_agents(base_dir: str) -> list[dict]:
+    agents = []
+    agents_dir = os.path.join(base_dir, "agents")
+    if not os.path.isdir(agents_dir):
+        return agents
+    for entry in sorted(os.listdir(agents_dir)):
+        full = os.path.join(agents_dir, entry)
         cfg = os.path.join(full, "config.yaml")
         if not os.path.isdir(full) or not os.path.isfile(cfg):
             continue
         if entry.endswith(".disabled"):
-            logger.info("  └─ Agente '%s' omitido (sufijo .disabled)", entry)
+            logger.info("  └─ Agent '%s' skipped (.disabled suffix)", entry)
             continue
-        if entry == "orquestador":
+        if entry == "orchestrator":
             continue
         agent_cfg = _load_yaml(cfg)
         if agent_cfg.get("enabled") is False:
-            logger.info("  └─ Agente '%s' omitido (enabled: false)", entry)
+            logger.info("  └─ Agent '%s' skipped (enabled: false)", entry)
             continue
-        agentes.append({"dir": f"agentes/{entry}"})
-    return agentes
+        agents.append({"dir": f"agents/{entry}"})
+    return agents
 
 
-def cargar_orquestador(orq_dir: str = "agentes/orquestador") -> tuple[Agent, list[Agent], list[dict]]:
+def load_orchestrator(orch_dir: str = "agents/orchestrator") -> tuple[Agent, list[Agent], list[dict]]:
     project_root = os.path.dirname(os.path.abspath(__file__))
-    abs_dir = os.path.join(project_root, orq_dir)
+    abs_dir = os.path.join(project_root, orch_dir)
     config = _load_yaml(os.path.join(abs_dir, "config.yaml"))
     prompt_cfg = _load_yaml(os.path.join(abs_dir, "prompt.yaml"))
 
-    agentes_cfg = config.get("agentes")
-    if not agentes_cfg:
-        agentes_cfg = _descubrir_agentes(project_root)
-        if agentes_cfg:
-            logger.info("Agentes descubiertos automaticamente: %s", [a["dir"] for a in agentes_cfg])
+    agents_cfg = config.get("agents")
+    if not agents_cfg:
+        agents_cfg = _discover_agents(project_root)
+        if agents_cfg:
+            logger.info("Agents auto-discovered: %s", [a["dir"] for a in agents_cfg])
 
     sub_agents = []
     agent_metas = []
-    for info in (agentes_cfg or []):
+    for info in (agents_cfg or []):
         try:
-            sub, meta = cargar_agente_desde_dir(info["dir"])
+            sub, meta = load_agent_from_dir(info["dir"])
             sub_agents.append(sub)
             agent_metas.append(meta)
-            logger.info("Cargado subagente ADK: '%s' (%s)", sub.name, sub.model)
+            logger.info("Loaded sub-agent ADK: '%s' (%s)", sub.name, sub.model)
         except Exception as e:
-            logger.warning("Error cargando agente desde %s: %s", info["dir"], e)
+            logger.warning("Error loading agent from %s: %s", info["dir"], e)
 
     model_adk = _format_model_for_adk(config.get("provider", {}))
     base_prompt = prompt_cfg.get(
         "system_prompt",
-        "Eres el orquestador principal. Delega en los subagentes especializados segun la consulta.",
+        "You are the main orchestrator. Delegate to specialized sub-agents based on the query.",
     )
 
     dynamic_prompt = _generate_orchestrator_prompt(base_prompt, sub_agents, agent_metas)
 
     root_agent = Agent(
-        name="orquestador",
-        description="Agente orquestador generico",
+        name="orchestrator",
+        description="Generic orchestrator agent",
         instruction=dynamic_prompt,
         model=model_adk,
         sub_agents=sub_agents,
@@ -415,10 +415,10 @@ def cargar_orquestador(orq_dir: str = "agentes/orquestador") -> tuple[Agent, lis
     )
 
     orq_meta = {
-        "nombre": config.get("nombre", "Orquestador"),
+        "display_name": config.get("name", "Orchestrator"),
         "model": config.get("provider", {}).get("model", "?"),
         "provider": config.get("provider", {}).get("name", "?"),
-        "skills": _cargar_skills(abs_dir, config),
+        "skills": _load_skills(abs_dir, config),
         "tools": [],
     }
 
@@ -428,7 +428,7 @@ def cargar_orquestador(orq_dir: str = "agentes/orquestador") -> tuple[Agent, lis
 
 
 async def main_async():
-    root_agent, sub_agents, _ = cargar_orquestador()
+    root_agent, sub_agents, _ = load_orchestrator()
     runner = InMemoryRunner(agent=root_agent)
 
     user_id = "cli_user"
@@ -440,8 +440,8 @@ async def main_async():
     print("=" * 60)
     print(f"  Google ADK Multi-Agent Orchestrator")
     if sub_agents:
-        print(f"  Subagentes conectados: {', '.join(a.name for a in sub_agents)}")
-    print("  Escribe 'salir' para terminar")
+        print(f"  Connected sub-agents: {', '.join(a.name for a in sub_agents)}")
+    print("  Type 'exit' to quit")
     print("=" * 60)
     print()
 
@@ -450,17 +450,17 @@ async def main_async():
 
     while True:
         try:
-            texto = input("  Tu > ").strip()
+            text = input("  You > ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
             break
 
-        if not texto:
+        if not text:
             continue
-        if texto.lower() in ("salir", "exit", "quit"):
+        if text.lower() in (("exit", "quit")):
             break
 
-        user_msg = types.Content(role="user", parts=[types.Part.from_text(text=texto)])
+        user_msg = types.Content(role="user", parts=[types.Part.from_text(text=text)])
         turn_assistant_contents: list[types.Content] = []
 
         run_config = None
@@ -473,14 +473,14 @@ async def main_async():
                 run_config=run_config,
             ):
                 if getattr(event, "content", None):
-                    author = getattr(event, "author", "orquestador")
+                    author = getattr(event, "author", "orchestrator")
                     for part in event.content.parts:
                         if part.text:
                             print(f"  {author} > {part.text}")
                     if event.content.role != 'user':
                         turn_assistant_contents.append(event.content)
         except Exception as e:
-            logger.error("Error en ejecucion de ADK runner: %s", e)
+            logger.error("Error executing ADK runner: %s", e)
 
         history_contents.append(user_msg)
         history_contents.extend(turn_assistant_contents)
@@ -497,13 +497,13 @@ async def main_async():
 
 def _clean_error_msg(msg: str) -> str:
     if "BadRequestError" in msg and "Upstream request failed" in msg:
-        return "El proveedor del modelo no esta disponible. Intenta de nuevo."
+        return "The model provider is not available. Try again."
     if "RateLimitError" in msg:
-        return "Limite de peticiones alcanzado. Espera unos segundos."
+        return "Rate limit reached. Wait a few seconds."
     if "AuthenticationError" in msg:
-        return "Error de autenticacion. Revisa tu API key en .env"
+        return "Authentication error. Check your API key in .env"
     if "Timeout" in msg:
-        return "Tiempo de espera agotado. Intenta de nuevo."
+        return "Timeout. Try again."
     return msg
 
 
@@ -518,24 +518,24 @@ def _json_event(**kwargs):
 
 
 async def main_json_events_async():
-    root_agent, sub_agents, all_metas = cargar_orquestador()
+    root_agent, sub_agents, all_metas = load_orchestrator()
 
     agent_list = []
     for i, meta in enumerate(all_metas):
         is_orq = i == 0
-        agent_name = "orquestador" if is_orq else sub_agents[i - 1].name if sub_agents else "orquestador"
+        agent_name = "orchestrator" if is_orq else sub_agents[i - 1].name if sub_agents else "orchestrator"
         skills_summary = []
         for s in meta.get("skills", []):
             skills_summary.append({
                 "id": s.get("id", ""),
-                "nombre": s.get("nombre", ""),
-                "descripcion": s.get("descripcion", "").strip(),
+                "name": s.get("name", ""),
+                "description": s.get("description", "").strip(),
                 "tags": s.get("tags", []),
-                "ejemplos": s.get("ejemplos", [])[:3],
+                "examples": s.get("examples", [])[:3],
             })
         agent_list.append({
             "name": agent_name,
-            "nombre": meta.get("nombre", agent_name),
+            "display_name": meta.get("name", agent_name),
             "model": meta.get("model", "?"),
             "provider": meta.get("provider", "?"),
             "is_orchestrator": is_orq,
@@ -568,11 +568,11 @@ async def main_json_events_async():
         query = req.get("query", "")
         if not query:
             continue
-        if query.lower() in ("salir", "exit", "quit"):
+        if query.lower() in (("exit", "quit")):
             break
 
         user_msg = types.Content(role="user", parts=[types.Part.from_text(text=query)])
-        prev_author = "orquestador"
+        prev_author = "orchestrator"
         turn_assistant_contents: list[types.Content] = []
 
         run_config = None
@@ -581,7 +581,7 @@ async def main_json_events_async():
 
         success = False
         for attempt in range(MAX_RETRIES + 1):
-            prev_author = "orquestador"
+            prev_author = "orchestrator"
             turn_assistant_contents = []
             try:
                 async for event in runner.run_async(
@@ -590,7 +590,7 @@ async def main_json_events_async():
                 ):
                     if not getattr(event, "content", None):
                         continue
-                    author = getattr(event, "author", "orquestador")
+                    author = getattr(event, "author", "orchestrator")
                     if author != prev_author:
                         _json_event(type="delegate", from_agent=prev_author, to_agent=author)
                         prev_author = author
