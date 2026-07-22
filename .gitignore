@@ -33,3 +33,6 @@ tui/.bun/
 *.log
 *.tmp
 .opencode/
+
+# Source videos (only the GIF belongs in the repo)
+*.mp4

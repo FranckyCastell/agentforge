@@ -23,6 +23,12 @@ It ships with four example agents (weather, news, legal, code) and supports **11
 > [!NOTE]
 > The orchestrator's system prompt is **dynamically generated** at startup by scanning `agents/`. Each agent's skills (with tags and example queries) and MCP tools are injected into the prompt so the LLM knows exactly when and where to delegate. No hardcoded routing.
 
+<div align="center">
+
+![AgentForge TUI demo](assets/demo.gif)
+
+</div>
+
 ---
 
 ## Architecture
@@ -63,24 +69,6 @@ flowchart TD
 ```
 
 The orchestrator uses **Google ADK's native delegation pattern**: a root agent receives all queries, analyzes intent, and delegates to the appropriate sub-agent. Sub-agents can use MCP tools, LLM internal knowledge, or both.
-
-### Delegation flow
-
-```
-you · 15:38
-    What's the weather tomorrow in Palma?
-
-● orchestrator · 15:38
-  ┌─ ▾ delegating to weather_agent ─────────────┐
-  │ Weather query — matches weather agent's     │
-  │ skills. Delegating.                         │
-  └─────────────────────────────────────────────┘
-  │
-  ◆ weather_agent
-  ├─ ✔ get_current_datetime → 2026-07-22 15:38 CET
-  └─ ✔ get_weather_byDateTimeRange
-          ⎿ city: Palma, forecast: 32°C, sunny
-```
 
 ---
 
@@ -246,6 +234,7 @@ The TUI (TypeScript + OpenTUI, `bun`) provides a visual interface for the orches
 │   ├── test_skills.py
 │   ├── test_prompt_builder.py
 │   ├── test_agent_loader.py
+│   ├── test_mcp_loader.py
 │   └── test_errors.py
 │
 ├── agents/

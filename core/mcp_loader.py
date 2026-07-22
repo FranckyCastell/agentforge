@@ -6,17 +6,11 @@ import logging
 import os
 from typing import Any
 
-import yaml
+from .skills import load_yaml
 
 logger = logging.getLogger("orchestrator_adk")
 
 _mcp_registry: dict[str, dict[str, Any]] | None = None
-
-
-def _load_yaml(path: str) -> dict[str, Any]:
-    """Load a single YAML document from *path*."""
-    with open(path) as f:
-        return yaml.safe_load(f)
 
 
 def load_mcp_registry() -> dict[str, dict[str, Any]]:
@@ -30,7 +24,7 @@ def load_mcp_registry() -> dict[str, dict[str, Any]]:
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     path = os.path.join(project_root, "mcp_servers.yaml")
     if os.path.exists(path):
-        _mcp_registry = _load_yaml(path) or {}
+        _mcp_registry = load_yaml(path) or {}
     else:
         _mcp_registry = {}
     return _mcp_registry
@@ -100,7 +94,7 @@ def load_local_mcp_registry(abs_dir: str) -> dict[str, dict[str, Any]]:
         return registry
     for fname in sorted(os.listdir(mcps_dir)):
         if fname.endswith((".yaml", ".yml")):
-            mcp_cfg = _load_yaml(os.path.join(mcps_dir, fname))
+            mcp_cfg = load_yaml(os.path.join(mcps_dir, fname))
             name = mcp_cfg.get("name", fname)
             registry[name] = mcp_cfg
     return registry

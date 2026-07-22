@@ -14,7 +14,7 @@ from google.adk.runners import InMemoryRunner
 from google.genai import types
 
 from .agent_loader import INTERNAL_TOOLS, load_orchestrator
-from .errors import RETRY_DELAY, RETRYABLE_PATTERNS, clean_error_msg, is_retryable
+from .errors import RETRY_DELAY, clean_error_msg, is_retryable
 
 logger = logging.getLogger("orchestrator_adk")
 
@@ -140,7 +140,7 @@ async def main_json_events_async() -> None:
         ]
         agent_list.append({
             "name": agent_name,
-            "display_name": meta.get("name", agent_name),
+            "display_name": meta.get("display_name", meta.get("name", agent_name)),
             "model": meta.get("model", "?"),
             "provider": meta.get("provider", "?"),
             "is_orchestrator": is_orq,

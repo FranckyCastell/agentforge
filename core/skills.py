@@ -67,6 +67,6 @@ def format_skills_compact(skills: list[dict[str, Any]]) -> str:
         if tags:
             line += f" [tags: {', '.join(tags)}]"
         if examples:
-            line += f" [ej: {' / '.join(examples)}]"
+            line += f" [ex: {' / '.join(examples)}]"
         parts.append(line)
     return "\n".join(parts)

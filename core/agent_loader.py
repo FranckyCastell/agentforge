@@ -144,9 +144,7 @@ def load_orchestrator(orch_dir: str = "agents/orchestrator") -> tuple[Agent, lis
             sub_agents.append(sub)
             agent_metas.append(meta)
             logger.info("Loaded sub-agent ADK: '%s' (%s)", sub.name, sub.model)
-            provider_pairs.append((sub.name, load_yaml(
-                os.path.join(project_root, info["dir"], "config.yaml")
-            ).get("provider", {})))
+            provider_pairs.append((sub.name, {"name": meta["provider"], "model": meta["model"]}))
         except Exception as e:
             logger.warning("Error loading agent from %s: %s", info["dir"], e)
 
