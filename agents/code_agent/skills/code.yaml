@@ -1,0 +1,12 @@
+id: code_generation
+name: Code Generation
+description: Generate, debug, and explain code in any language
+tags:
+  - code
+  - programming
+  - debugging
+  - architecture
+examples:
+  - "Write a Python function to parse CSV files"
+  - "How do I fix a KeyError in my dictionary?"
+  - "Explain the difference between async and await in Python"

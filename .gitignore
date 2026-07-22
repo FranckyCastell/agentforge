@@ -2,14 +2,19 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
+*.egg
 .venv/
 venv/
 env/
+dist/
+build/
+.pytest_cache/
 
 # Environment variables — keep .env.example
 .env
 .env.local
-agentes/*/.env
+agents/*/.env
 
 # Node/Bun
 node_modules/

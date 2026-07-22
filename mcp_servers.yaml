@@ -25,11 +25,6 @@ duckduckgo-search:
   command: npx
   args: ["-y", "duckduckgo-mcp"]
 
-# duckduckgo-search:
-#   type: local
-#   command: npx
-#   args: ["-y", "duckduckgo-mcp"]
-
 # brave-search:
 #   type: local
 #   command: npx

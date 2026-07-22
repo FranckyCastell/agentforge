@@ -18,7 +18,7 @@
 
 **AgentForge** is a YAML-defined, multi-agent orchestrator built on [Google ADK](https://github.com/google/adk-python). Instead of writing Python to register sub-agents, you drop a directory with a few YAML files and the orchestrator discovers it, describes it to the LLM, and routes queries automatically.
 
-It ships with three example agents (weather, news, legal) and supports **11 LLM providers** with per-agent configuration, **real MCP tools** (Open-Meteo, DuckDuckGo — zero API keys required), a **terminal UI** with delegation visualization, and automatic retry on upstream failures.
+It ships with four example agents (weather, news, legal, code) and supports **11 LLM providers** with per-agent configuration, **real MCP tools** (Open-Meteo, DuckDuckGo — zero API keys required), a **terminal UI** with delegation visualization, and automatic retry on upstream failures.
 
 > [!NOTE]
 > The orchestrator's system prompt is **dynamically generated** at startup by scanning `agents/`. Each agent's skills (with tags and example queries) and MCP tools are injected into the prompt so the LLM knows exactly when and where to delegate. No hardcoded routing.
@@ -38,9 +38,10 @@ flowchart TD
     ORQ["Orchestrator<br/>Google ADK InMemoryRunner<br/>Dynamic prompt from agents/"]
     
     subgraph Agents["Discovered Agents"]
-      W["Weather Agent<br/>nemotron-3-ultra-free<br/>MCP: Open-Meteo"]
-      N["News Agent<br/>north-mini-code-free<br/>MCP: DuckDuckGo"]
-      L["Lawyer Agent<br/>deepseek-v4-flash-free<br/>LLM Knowledge"]
+      W["Weather Agent<br/>deepseek-v4-flash<br/>MCP: Open-Meteo"]
+      N["News Agent<br/>deepseek-v4-flash<br/>MCP: DuckDuckGo"]
+      L["Lawyer Agent<br/>deepseek-v4-flash<br/>LLM Knowledge"]
+      C["Code Agent<br/>llama-3.3-70b<br/>LLM Knowledge"]
     end
   end
 
@@ -55,6 +56,7 @@ flowchart TD
   ORQ --> W
   ORQ --> N
   ORQ --> L
+  ORQ --> C
   W --> OM
   N --> DDG
   L --> ANY
@@ -162,6 +164,9 @@ provider:
 > [!NOTE]
 > Provider environments are isolated per-agent via `.env` files. The system loads `.env` from the project root first, then overrides with per-agent `.env` if present.
 
+> [!WARNING]
+> **OpenAI-compatible providers** (OpenRouter, DeepSeek, xAI, local Ollama) share `OPENAI_API_KEY` and `OPENAI_API_BASE` env vars. Only one can be active per process. AgentForge detects this at startup and logs a warning if agents use conflicting providers. For mixed-provider setups, combine providers with distinct env vars (e.g. OpenRouter + Anthropic + Google) — these are fully isolated.
+
 ---
 
 ## MCP Tools
@@ -219,10 +224,29 @@ The TUI (TypeScript + OpenTUI, `bun`) provides a visual interface for the orches
 
 ```
 .
-├── orchestrator.py            # ADK runner + dynamic prompt + retry
+├── orchestrator.py            # Thin entry point (delegates to core/)
+├── pyproject.toml             # Python packaging (pip install agentforge)
 ├── mcp_servers.yaml           # Central MCP server registry
 ├── .env.example               # All provider API key templates
 ├── requirements.txt           # Python dependencies
+│
+├── core/                      # Modular core package
+│   ├── __init__.py            # Public API exports
+│   ├── providers.py           # 11 LLM providers + API key resolution
+│   ├── mcp_loader.py          # MCP server registry & toolset builder
+│   ├── skills.py              # Declarative skill loading & formatting
+│   ├── prompt_builder.py      # Dynamic orchestrator prompt generation
+│   ├── agent_loader.py        # Agent discovery & YAML config loading
+│   ├── runner.py              # CLI + JSON-events runner with retry
+│   └── errors.py              # Error classification & retry logic
+│
+├── tests/                     # pytest test suite
+│   ├── conftest.py
+│   ├── test_providers.py
+│   ├── test_skills.py
+│   ├── test_prompt_builder.py
+│   ├── test_agent_loader.py
+│   └── test_errors.py
 │
 ├── agents/
 │   ├── orchestrator/           # Root orchestrator (routing agent)
@@ -232,15 +256,22 @@ The TUI (TypeScript + OpenTUI, `bun`) provides a visual interface for the orches
 │   ├── weather_agent/         # Weather (MCP: Open-Meteo)
 │   │   ├── config.yaml
 │   │   ├── prompt.yaml
+│   │   ├── mcps/weather.yaml
 │   │   └── skills/weather.yaml
 │   ├── news_agent/       # News (MCP: DuckDuckGo)
 │   │   ├── config.yaml
 │   │   ├── prompt.yaml
+│   │   ├── mcps/search.yaml
 │   │   └── skills/news.yaml
-│   └── lawyer_agent/        # Legal (LLM knowledge, no MCP)
+│   ├── lawyer_agent/        # Legal (LLM knowledge, no MCP)
+│   │   ├── config.yaml
+│   │   ├── prompt.yaml
+│   │   ├── mcps/.gitkeep
+│   │   └── skills/legal.yaml
+│   └── code_agent/          # Code (Groq, LLM knowledge)
 │       ├── config.yaml
 │       ├── prompt.yaml
-│       └── skills/legal.yaml
+│       └── skills/code.yaml
 │
 └── tui/
     ├── index.ts               # OpenTUI terminal interface
@@ -261,6 +292,13 @@ The TUI (TypeScript + OpenTUI, `bun`) provides a visual interface for the orches
 ### 1. Install dependencies
 
 ```bash
+pip install -e ".[dev,weather]"
+```
+
+This installs AgentForge in editable mode with dev tools (pytest) and the
+weather MCP server. For a minimal install:
+
+```bash
 pip install -r requirements.txt
 pip install mcp_weather_server
 ```
@@ -277,6 +315,8 @@ cp .env.example .env
 **CLI mode:**
 ```bash
 python orchestrator.py
+# or, after pip install:
+agentforge
 ```
 
 **JSON events (for programmatic use):**
