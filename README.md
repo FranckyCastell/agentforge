@@ -319,9 +319,3 @@ cd tui && bun install && cd .. && bun run tui/index.ts
 ```
 
 ---
-
-<div align="center">
-
-Built with [Google ADK](https://github.com/google/adk-python)
-
-</div>
