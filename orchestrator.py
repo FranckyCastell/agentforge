@@ -159,40 +159,40 @@ def _build_mcp_toolset(mcp_def: dict) -> object | None:
         return None
 
 
+def _load_local_mcp_registry(abs_dir: str) -> dict:
+    registry = {}
+    mcps_dir = os.path.join(abs_dir, "mcps")
+    if not os.path.isdir(mcps_dir):
+        return registry
+    for fname in sorted(os.listdir(mcps_dir)):
+        if fname.endswith((".yaml", ".yml")):
+            mcp_cfg = _load_yaml(os.path.join(mcps_dir, fname))
+            name = mcp_cfg.get("name", fname)
+            registry[name] = mcp_cfg
+    return registry
+
+
 def _load_mcp_tools(abs_dir: str, config: dict) -> tuple[list, list[str]]:
     tools = []
     tool_names = []
 
+    local_registry = _load_local_mcp_registry(abs_dir)
+    central_registry = _load_mcp_registry()
+
     mcp_refs = config.get("mcps", [])
-    if mcp_refs:
-        registry = _load_mcp_registry()
-        for ref in mcp_refs:
-            if ref in registry:
-                mcp_def = registry[ref]
-                if mcp_def.get("enabled") is False:
-                    continue
-                toolset = _build_mcp_toolset(mcp_def)
-                if toolset:
-                    tools.append(toolset)
-                    tool_names.append(ref)
-                    logger.info("  └─ MCP '%s' loaded from central registry", ref)
-            else:
-                logger.warning("  └─ MCP '%s' not found in mcp_servers.yaml", ref)
-
-    mcps_dir = os.path.join(abs_dir, "mcps")
-    if os.path.isdir(mcps_dir):
-        from google.adk.tools import McpToolset
-        from mcp.client.stdio import StdioServerParameters
-
-        for fname in sorted(os.listdir(mcps_dir)):
-            if fname.endswith((".yaml", ".yml")):
-                mcp_cfg = _load_yaml(os.path.join(mcps_dir, fname))
-                name = mcp_cfg.get("name", fname)
-                toolset = _build_mcp_toolset(mcp_cfg)
-                if toolset:
-                    tools.append(toolset)
-                    tool_names.append(name)
-                    logger.info("  └─ MCP '%s' loaded from mcps/%s", name, fname)
+    for ref in mcp_refs:
+        mcp_def = local_registry.get(ref) or central_registry.get(ref)
+        if mcp_def is None:
+            logger.warning("  └─ MCP '%s' not found (local mcps/ nor mcp_servers.yaml)", ref)
+            continue
+        if mcp_def.get("enabled") is False:
+            continue
+        toolset = _build_mcp_toolset(mcp_def)
+        if toolset:
+            tools.append(toolset)
+            tool_names.append(ref)
+            source = "local mcps/" if ref in local_registry else "central registry"
+            logger.info("  └─ MCP '%s' loaded from %s", ref, source)
 
     return tools, tool_names
 

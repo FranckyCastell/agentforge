@@ -1,0 +1,4 @@
+name: duckduckgo-search
+type: local
+command: npx
+args: ["-y", "duckduckgo-mcp"]
