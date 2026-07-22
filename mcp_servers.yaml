@@ -1,0 +1,51 @@
+# ─── MCP Server Registry ─────────────────────────────────────────────
+#
+# Central registry of MCP servers. Agents reference these by name
+# in their config.yaml under `mcps:`.
+#
+# Types:
+#   local  — stdio command (command + args + env)
+#   remote — URL-based (url)
+#
+# Environment variables: use ${VAR_NAME} syntax, resolved at load time.
+# `enabled: false` disables a server without removing it.
+#
+# Example agent config.yaml:
+#   mcps:
+#     - weather-mcp
+#     - duckduckgo-search
+
+weather-mcp:
+  type: local
+  command: python3
+  args: ["-m", "mcp_weather_server"]
+
+duckduckgo-search:
+  type: local
+  command: npx
+  args: ["-y", "duckduckgo-mcp"]
+
+# ─── Examples (uncomment and configure as needed) ────────────────────
+
+# artificial-analysis:
+#   type: local
+#   command: npx
+#   args: ["-y", "artificial-analysis-mcp"]
+#   env:
+#     AA_API_KEY: "${AA_API_KEY}"
+
+# openrouter:
+#   type: remote
+#   url: https://mcp.openrouter.ai/mcp
+
+# aws-knowledge:
+#   type: local
+#   command: uvx
+#   args: ["--from", "git+https://github.com/awslabs/mcp#subdirectory=src/aws-documentation-mcp-server", "awslabs.aws-documentation-mcp-server"]
+#   env:
+#     AWS_READ_ONLY: "true"
+
+# hashicorp-terraform:
+#   type: local
+#   command: docker
+#   args: ["run", "-i", "--rm", "hashicorp/terraform-mcp-server:0.5.2"]

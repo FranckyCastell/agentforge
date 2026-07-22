@@ -1,0 +1,54 @@
+id: legal_advice
+nombre: Legal Advice
+descripcion: >
+  Legal guidance on specific situations: rights, obligations, procedures,
+  deadlines, and legal options. Covers civil, criminal, commercial, labor,
+  and administrative law.
+tags:
+  - law
+  - legal
+  - rights
+  - legal-advice
+  - civil-law
+  - criminal-law
+  - labor-law
+ejemplos:
+  - "I have a problem with my landlord, what can I do?"
+  - "What are my rights if I get fired?"
+  - "How does a mutual-consent divorce work?"
+  - "Is it legal for my company to make me work unpaid overtime?"
+---
+id: legal_concepts
+nombre: Legal Concepts
+descripcion: >
+  Explanation of legal concepts, terms, and institutions: what is a will,
+  how a mortgage works, what prescription means, difference between fraud
+  and negligence, etc.
+tags:
+  - law
+  - legal-concepts
+  - definitions
+  - jurisprudence
+  - legal-terms
+ejemplos:
+  - "What is adverse possession?"
+  - "Difference between civil and criminal liability"
+  - "How does the right of first refusal work?"
+  - "What is a lease agreement?"
+---
+id: legal_drafting
+nombre: Legal Drafting
+descripcion: >
+  Drafting basic legal documents: demand letters, simple contracts, powers
+  of attorney, authorizations, formal notices.
+tags:
+  - law
+  - drafting
+  - contracts
+  - letters
+  - documents
+ejemplos:
+  - "Draft a demand letter to my landlord"
+  - "I need a service provision contract"
+  - "Write a power of attorney for my brother"
+  - "Draft a payment demand notice"

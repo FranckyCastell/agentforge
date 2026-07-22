@@ -1,0 +1,50 @@
+id: current_weather
+nombre: Current Weather
+descripcion: >
+  Checks the current weather conditions for a city: temperature, feels-like,
+  humidity, wind speed, atmospheric pressure, cloud cover, and condition codes.
+tags:
+  - weather
+  - current-conditions
+  - temperature
+  - humidity
+  - wind
+  - real-time
+ejemplos:
+  - "What's the weather in Barcelona right now?"
+  - "What's the current temperature in Madrid"
+  - "Is it raining in Buenos Aires?"
+  - "How's the weather in Mexico City right now"
+---
+id: weather_forecast
+nombre: Weather Forecast
+descripcion: >
+  Weather forecast for a city over a date range. Returns high/low temperatures,
+  expected conditions, precipitation, and wind for each day.
+tags:
+  - forecast
+  - weather-prediction
+  - daily-forecast
+  - weekend
+  - precipitation
+ejemplos:
+  - "Will it rain tomorrow in Bilbao?"
+  - "How will the weather be this weekend in Valencia"
+  - "Forecast for the next 3 days in Seville"
+  - "What temperature will it be in London next Monday"
+---
+id: air_quality
+nombre: Air Quality
+descripcion: >
+  Checks air quality for a city: PM2.5, PM10, ozone, nitrogen dioxide, carbon
+  monoxide, and health recommendations based on pollution levels.
+tags:
+  - air-quality
+  - pollution
+  - pm25
+  - health
+  - environment
+ejemplos:
+  - "How's the air quality in Mexico City"
+  - "Is there pollution in Santiago de Chile?"
+  - "Is it safe to exercise outdoors in Shanghai?"

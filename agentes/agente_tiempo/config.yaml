@@ -1,0 +1,9 @@
+nombre: "Weather Agent"
+
+provider:
+  name: openrouter
+  model: "deepseek/deepseek-v4-flash"
+  api_key_env: "OPENROUTER_API_KEY"
+
+mcps:
+  - weather-mcp
